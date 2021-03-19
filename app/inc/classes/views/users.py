@@ -1,27 +1,50 @@
 import json
 
+import sys, os
+
 from flask import (
-    Blueprint, request, session, url_for, Response
+    Blueprint, request, session, Response
 )
-from werkzeug.security import check_password_hash, generate_password_hash
+
+BASE_PATH = os.path.abspath(__file__+ '/../../../../')
+sys.path.append(BASE_PATH)
+
+# import class for users
+from inc.classes.db.Users import Users
 
 UsersBp = Blueprint('users', __name__, url_prefix='/users')
 
-@UsersBp.route('/create', methods=['GET'])
-def login():
-    # resp = Request_lib.get_authorization(request, type='Basic', decode64=True)
-    # credentials = resp if resp else {}
-    # resp = Perfis.r_login(credentials)
-    # status = 200 if resp['ok'] else 401    
-    # response = app.response_class(
-    #     response= json.dumps(resp),
-    #     status=status,
-    #     mimetype='application/json'
-    # )
+@UsersBp.route('/criar', methods=['POST'])
+def criar_um():
+    input_json = request.json
+    resp = Users().criar(input_json)
+    status = 200 if resp['ok'] else 401    
     response = Response(
-        response= json.dumps({"ok":True}),
-        status=200,
+        response= json.dumps(resp),
+        status=status,
         mimetype='application/json'
     )
+    # response = Response(
+    #     response= json.dumps(input_json),
+    #     status=200,
+    #     mimetype='application/json'
+    # )
     # return f'{credentials}'
+    return response
+
+@UsersBp.route('/criarMuitos', methods=['POST'])
+def criar_many():
+
+    input_json = request.json
+
+    resp = Users().criar_multiplos(input_json)
+
+    status = 200 if resp['ok'] else 401 
+
+    response = Response(
+        response= json.dumps(resp),
+        status=status,
+        mimetype='application/json'
+    )
+
     return response

@@ -17,21 +17,15 @@ app.config.update(
 
 # import views 
 from inc.classes.views.users import UsersBp
+
+# import consts
 from inc.consts.consts import *
 
+# import db
+from inc.classes.db.Db import DbLib
 
 # register views
 app.register_blueprint(UsersBp)
-
-
-def get_db(db):
-    client = MongoClient(host=DBHOST,
-                        port=27017, 
-                        username=DBUSERNAME, 
-                        password=DBUSERPASS,
-                        authSource=DBUSERAUTH)
-    db = client[db]
-    return db
 
 
 @app.route('/')
@@ -47,7 +41,7 @@ def ping_server():
 def get_stored_animals():
     db=""
     try:
-        db = get_db("desafio")
+        db = DbLib().connect(db="desafio")
         
         _users = db.users.find()
 

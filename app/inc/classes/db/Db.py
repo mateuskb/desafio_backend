@@ -1,26 +1,22 @@
 import sys, os
-import psycopg2
-from psycopg2 import extras
+import pymongo
+from pymongo import MongoClient
 
 BASE_PATH = os.path.abspath(__file__+ '/../../../../')
 sys.path.append(BASE_PATH)
 
-from inc.consts.consts import Consts as consts
+from inc.consts.consts import *
 
 class DbLib:
 
-    def __init__(self, sgbd='pgsql'):
-        if sgbd in consts.SGBDS:
-            self.sgbd = sgbd
-        else:
-            self.sgbd = ''
+    def __init__(self):
+        pass
     
-    def connect(self, db=consts.GESTME_DB):
-        if self.sgbd == 'pgsql':
-            try:
-                conn = psycopg2.connect(host=db['hostname'], user=db['username'], password=db['password'], dbname=db['database'])
-                return conn
-            except:
-                return False
-        else:
-            return False
+    def connect(self, db="desafio"):
+        client = MongoClient(host=DBHOST,
+                            port=27017, 
+                            username=DBUSERNAME, 
+                            password=DBUSERPASS,
+                            authSource=DBUSERAUTH)
+        db = client[db]
+        return db
