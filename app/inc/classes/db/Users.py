@@ -55,7 +55,7 @@ class Users:
             data['errors']['celular'] = 'Celular não indicado.'
         
         if score < 0 or score > 1000 :
-            data['errors']['score'] = 'Score invalido.'
+            data['errors']['score'] = 'Score inválido.'
         
         if not self.conn:
             data['errors']['conn'] = 'Erro de comunicação com o banco de dados.'
@@ -138,7 +138,7 @@ class Users:
                 data['errors']['celular'] = 'Celular não indicado.'
             
             if score < 0 or score > 1000 :
-                data['errors']['score'] = 'Score invalido.'
+                data['errors']['score'] = 'Score inválido.'
             
         if not self.conn:
             data['errors']['conn'] = 'Erro de comunicação com o banco de dados.'
@@ -191,11 +191,95 @@ class Users:
         if not data['errors']:
             try:
                 
-                resp = self.conn.users.insert_many(inputs)
+                resp = self.conn.users.find_one({'cpf' : cpf, 'celular': celular})
+
+                if resp:
+                    if not str(resp['_id']):
+                        data["errors"]["user"] = "Usuario não encontrado."
+                else:
+                    data["errors"]["user"] = "Usuario não encontrado."
 
                 if not data['errors']:
                     data['ok'] = True
-                    data['data'] = True
+                    data['data'] = str(resp['_id'])
+
+            except Exception as error:
+                data['errors']['conn'] = 'Erro na conexão com o banco de dados: ' + str(error)
+            
+            finally:
+                if type(self.conn)==MongoClient:
+                    self.conn.close()
+
+        return data
+    
+    def calcular_juros(self, input):
+        
+        data = {
+            'ok': False,
+            'errors': {},
+            'data': 0
+        }
+
+        # Input
+        id_user = 0
+        valor = 0
+        parcelas = ""
+        sem_cadastro = False
+        negativado = False
+
+        # Params
+        if input:
+            id_user = str(input['id']) if 'id' in input else 0                
+            valor = str(input['valor']) if 'valor' in input else 0    
+            parcelas = str(input['numeroParcelas']) if 'numeroParcelas' in input else ""  
+    
+        # Validation
+        if not id_user:
+            data['errors']['user'] = 'Usuario não indicado.'            
+
+        if not valor:
+            data['errors']['valor'] = 'Valor não indicado.'
+        
+        if not parcelas in PARCELAS:
+            data['errors']['parcelas'] = 'Parcela não indicada ou inválida.'
+        
+        if not self.conn:
+            data['errors']['conn'] = 'Erro de comunicação com o banco de dados.'
+
+        if not data['errors']:
+            try:
+                
+                resp = self.conn.users.find_one({'_id': id_user})
+    
+                if resp:
+                    if not "negativado" in resp or not "score" in resp:
+                        data["errors"]["user"] = "Usuario inválido."
+                else:
+                    sem_cadastro = True
+
+                if not data['errors']:
+                    taxa_aplicada = ""
+                    if sem_cadastro :
+                        taxa_aplicada = "SCORE_BAIXO"
+                    else:
+                        if resp["negativado"]:
+                            taxa_aplicada = "negativado"
+                        else:
+                            if int(resp["score"]) > 500:
+                                taxa_aplicada = "SCORE_ALTO"
+                            else:
+                                taxa_aplicada = "SCORE_BAIXO"
+
+                    try:
+                        valor = int(valor)
+                        valor += valor * TAXAS[taxa_aplicada][parcelas]
+                        data['data'] = valor
+                    except:
+                        data['errors']['valor'] = 'Valor inválido.'
+
+
+
+                    data['ok'] = True
 
             except Exception as error:
                 data['errors']['conn'] = 'Erro na conexão com o banco de dados: ' + str(error)
